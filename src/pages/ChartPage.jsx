@@ -1,12 +1,16 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { BottomNav } from "./HomePage";
+import Sidebar from "../components/Sidebar";
 
-const PERIODS = ["7일", "14일", "30일"];
+const PERIODS = [
+  { label: "7일", value: 7 },
+  { label: "14일", value: 14 },
+  { label: "30일", value: 30 },
+];
 
 export default function ChartPage() {
   const navigate = useNavigate();
-  const [period, setPeriod] = useState("7일");
+  const [period, setPeriod] = useState(7);
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -14,8 +18,7 @@ export default function ChartPage() {
     async function fetchData() {
       setLoading(true);
       try {
-        const periodNum = period.replace("일", "");
-        const res = await fetch(`/api/chart?period=${periodNum}`, {
+        const res = await fetch(`/api/chart?period=${period}`, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
         if (res.status === 401) {
@@ -25,8 +28,7 @@ export default function ChartPage() {
           return;
         }
         if (!res.ok) return;
-        const json = await res.json();
-        setData(json);
+        setData(await res.json());
       } catch (err) {
         console.error(err);
       } finally {
@@ -38,159 +40,139 @@ export default function ChartPage() {
 
   const avgSatisfaction = data.length
     ? (data.reduce((s, d) => s + Number(d.satisfaction), 0) / data.length).toFixed(1)
-    : 0;
+    : null;
   const avgRank = data.length
     ? Math.round(data.reduce((s, d) => s + Number(d.horoscope_rank), 0) / data.length)
-    : 0;
+    : null;
   const bestDay = data.length
-    ? data.reduce(
-        (best, d) => (Number(d.satisfaction) > Number(best.satisfaction) ? d : best),
-        data[0],
-      )
+    ? data.reduce((best, d) => (Number(d.satisfaction) > Number(best.satisfaction) ? d : best), data[0])
     : null;
 
   return (
-    <div style={styles.page}>
-      <div style={styles.header}>
-        <h1 style={styles.headerTitle}>통계</h1>
-        <p style={styles.headerSub}>운세와 감정의 흐름을 확인해요</p>
-      </div>
+    <div style={s.root}>
+      <Sidebar />
+      <main style={s.main}>
+        <div style={s.pageHeader}>
+          <div>
+            <h1 style={s.pageTitle}>통계</h1>
+            <p style={s.pageSub}>운세와 감정의 흐름을 확인해요</p>
+          </div>
+          <div style={s.periodRow}>
+            {PERIODS.map((p) => (
+              <button
+                key={p.value}
+                style={{ ...s.periodBtn, ...(period === p.value ? s.periodBtnActive : {}) }}
+                onClick={() => setPeriod(p.value)}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
-      {/* 기간 선택 */}
-      <div style={styles.periodRow}>
-        {PERIODS.map((p) => (
-          <button
-            key={p}
-            style={{
-              ...styles.periodBtn,
-              ...(period === p ? styles.periodActive : {}),
-            }}
-            onClick={() => setPeriod(p)}
-          >
-            {p}
-          </button>
-        ))}
-      </div>
-
-      <div style={styles.content}>
         {loading ? (
-          <p style={styles.loadingText}>데이터 불러오는 중...</p>
+          <div style={s.centerMsg}>
+            <div style={s.loadingSpinner} />
+          </div>
         ) : data.length === 0 ? (
-          <div style={styles.emptyWrap}>
-            <p style={styles.emptyIcon}>📊</p>
-            <p style={styles.emptyText}>아직 데이터가 없어요.</p>
-            <p style={styles.emptySubText}>일기를 작성하면 통계를 볼 수 있어요!</p>
+          <div style={s.emptyWrap}>
+            <p style={s.emptyIcon}>📊</p>
+            <p style={s.emptyTitle}>아직 데이터가 없어요</p>
+            <p style={s.emptyDesc}>일기를 작성하면 통계를 볼 수 있어요!</p>
           </div>
         ) : (
           <>
-            {/* 요약 카드 3개 */}
-            <div style={styles.summaryRow}>
+            {/* 요약 카드 */}
+            <div style={s.summaryRow}>
               <SummaryCard
                 label="평균 만족도"
                 value={`${avgSatisfaction}점`}
-                color="#29ABE2"
+                sub={`최근 ${period}일 기준`}
+                color="#38bdf8"
+                icon="⭐"
               />
               <SummaryCard
                 label="평균 운세순위"
                 value={`${avgRank}위`}
-                color="#FF6B35"
+                sub="12개 별자리 중"
+                color="#818cf8"
+                icon="✦"
               />
               <SummaryCard
                 label="최고의 날"
-                value={bestDay ? bestDay.diary_date : "-"}
-                color="#9B59B6"
+                value={bestDay ? bestDay.diary_date : "—"}
+                sub={bestDay ? `만족도 ${bestDay.satisfaction}점` : ""}
+                color="#fb923c"
+                icon="🏆"
               />
             </div>
 
-            {/* 만족도 그래프 */}
-            <Section title="하루 만족도">
-              <BarChart
-                data={data.map((d) => ({
-                  label: d.diary_date,
-                  value: Number(d.satisfaction),
-                  max: 5,
-                }))}
-                color="#29ABE2"
-                unit="점"
-              />
-            </Section>
+            {/* 차트 영역 */}
+            <div style={s.chartsGrid}>
+              <div style={s.chartCard}>
+                <p style={s.chartTitle}>하루 만족도</p>
+                <BarChart
+                  data={data.map((d) => ({ label: d.diary_date, value: Number(d.satisfaction), max: 5, display: `${d.satisfaction}점` }))}
+                  color="#38bdf8"
+                />
+              </div>
+              <div style={s.chartCard}>
+                <p style={s.chartTitle}>운세 순위 <span style={s.chartHint}>(낮을수록 좋음)</span></p>
+                <BarChart
+                  data={data.map((d) => ({ label: d.diary_date, value: 13 - Number(d.horoscope_rank), max: 12, display: `${d.horoscope_rank}위` }))}
+                  color="#818cf8"
+                />
+              </div>
+            </div>
 
-            {/* 운세 순위 그래프 */}
-            <Section title="운세 순위 (낮을수록 좋음)">
-              <BarChart
-                data={data.map((d) => ({
-                  label: d.diary_date,
-                  value: 13 - Number(d.horoscope_rank),
-                  max: 12,
-                  display: `${d.horoscope_rank}위`,
-                }))}
-                color="#FF6B35"
-                unit=""
-              />
-            </Section>
-
-            {/* 상관관계 */}
-            <Section title="운세 순위 vs 만족도">
+            <div style={s.chartCard}>
+              <p style={s.chartTitle}>운세 순위 vs 만족도 <span style={s.chartHint}>— 왼쪽 위일수록 운세도 좋고 만족도도 높아요</span></p>
               <CorrelationChart data={data} />
-            </Section>
+            </div>
           </>
         )}
-      </div>
+      </main>
 
-      <BottomNav current="chart" navigate={navigate} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
 
-/* ────────── 요약 카드 ────────── */
-function SummaryCard({ label, value, color }) {
+function SummaryCard({ label, value, sub, color, icon }) {
   return (
-    <div style={styles.summaryCard}>
-      <p style={styles.summaryLabel}>{label}</p>
-      <p style={{ ...styles.summaryValue, color }}>{value}</p>
+    <div style={s.summaryCard}>
+      <div style={{ ...s.summaryIcon, background: `${color}18`, color }}>{icon}</div>
+      <p style={s.summaryLabel}>{label}</p>
+      <p style={{ ...s.summaryValue, color }}>{value}</p>
+      {sub && <p style={s.summarySub}>{sub}</p>}
     </div>
   );
 }
 
-/* ────────── 섹션 래퍼 ────────── */
-function Section({ title, children }) {
+function BarChart({ data, color }) {
   return (
-    <div style={styles.section}>
-      <p style={styles.sectionTitle}>{title}</p>
-      {children}
-    </div>
-  );
-}
-
-/* ────────── 바 차트 ────────── */
-function BarChart({ data, color, unit }) {
-  return (
-    <div style={styles.barChart}>
+    <div style={s.barChart}>
       {data.map((d, i) => (
-        <div key={i} style={styles.barRow}>
-          <span style={styles.barLabel}>{d.label}</span>
-          <div style={styles.barBg}>
+        <div key={i} style={s.barRow}>
+          <span style={s.barLabel}>{d.label}</span>
+          <div style={s.barBg}>
             <div
               style={{
-                ...styles.barFill,
+                ...s.barFill,
                 width: `${Math.round((d.value / d.max) * 100)}%`,
                 background: color,
               }}
             />
           </div>
-          <span style={styles.barVal}>{d.display ?? `${d.value}${unit}`}</span>
+          <span style={s.barVal}>{d.display}</span>
         </div>
       ))}
     </div>
   );
 }
 
-/* ────────── 상관관계 산점도 ────────── */
 function CorrelationChart({ data }) {
-  const W = 300,
-    H = 180,
-    PAD = 30;
-
+  const W = 600, H = 260, PAD = 48;
   const points = data.map((d) => ({
     x: PAD + ((Number(d.horoscope_rank) - 1) / 11) * (W - PAD * 2),
     y: PAD + ((5 - Number(d.satisfaction)) / 4) * (H - PAD * 2),
@@ -199,131 +181,96 @@ function CorrelationChart({ data }) {
     date: d.diary_date,
   }));
 
+  const gridX = [1, 4, 7, 10, 12];
+  const gridY = [1, 2, 3, 4, 5];
+
   return (
-    <div>
-      <svg
-        width="100%"
-        viewBox={`0 0 ${W} ${H}`}
-        style={{ overflow: "visible" }}
-      >
-        <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="#ddd" strokeWidth="1" />
-        <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} stroke="#ddd" strokeWidth="1" />
-        <text x={W / 2} y={H - 6} textAnchor="middle" fontSize="10" fill="#aaa">
-          운세 순위 →
-        </text>
-        <text x={PAD - 4} y={PAD + 4} textAnchor="end" fontSize="9" fill="#aaa">
-          높음
-        </text>
-        <text x={PAD - 4} y={H - PAD + 4} textAnchor="end" fontSize="9" fill="#aaa">
-          낮음
-        </text>
-        {points.map((p, i) => (
-          <g key={i}>
-            <circle cx={p.x} cy={p.y} r={6} fill="#29ABE2" fillOpacity={0.75} />
-            <text x={p.x} y={p.y - 9} textAnchor="middle" fontSize="9" fill="#888">
-              {p.date}
-            </text>
-          </g>
-        ))}
-      </svg>
-      <p style={styles.correlationHint}>
-        왼쪽 위일수록 운세 순위가 좋고 만족도도 높아요
-      </p>
-    </div>
+    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ overflow: "visible", marginTop: 12 }}>
+      {/* Grid lines */}
+      {gridX.map((rank) => {
+        const x = PAD + ((rank - 1) / 11) * (W - PAD * 2);
+        return <line key={rank} x1={x} y1={PAD} x2={x} y2={H - PAD} stroke="rgba(255,255,255,0.05)" strokeWidth="1" />;
+      })}
+      {gridY.map((sat) => {
+        const y = PAD + ((5 - sat) / 4) * (H - PAD * 2);
+        return <line key={sat} x1={PAD} y1={y} x2={W - PAD} y2={y} stroke="rgba(255,255,255,0.05)" strokeWidth="1" />;
+      })}
+
+      {/* Axes */}
+      <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+      <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+
+      {/* Axis labels */}
+      <text x={W / 2} y={H - 8} textAnchor="middle" fontSize="11" fill="#334155">운세 순위 →</text>
+      {gridX.map((rank) => {
+        const x = PAD + ((rank - 1) / 11) * (W - PAD * 2);
+        return <text key={rank} x={x} y={H - PAD + 14} textAnchor="middle" fontSize="9" fill="#334155">{rank}위</text>;
+      })}
+      {gridY.map((sat) => {
+        const y = PAD + ((5 - sat) / 4) * (H - PAD * 2);
+        return <text key={sat} x={PAD - 8} y={y + 3} textAnchor="end" fontSize="9" fill="#334155">{sat}</text>;
+      })}
+      <text x={12} y={H / 2} textAnchor="middle" fontSize="11" fill="#334155" transform={`rotate(-90, 12, ${H / 2})`}>만족도 ↑</text>
+
+      {/* Points */}
+      {points.map((p, i) => (
+        <g key={i}>
+          <circle cx={p.x} cy={p.y} r={8} fill="#38bdf8" fillOpacity={0.15} />
+          <circle cx={p.x} cy={p.y} r={5} fill="#38bdf8" fillOpacity={0.85} />
+          <text x={p.x} y={p.y - 12} textAnchor="middle" fontSize="9" fill="#475569">{p.date}</text>
+        </g>
+      ))}
+    </svg>
   );
 }
 
-/* ────────── 스타일 ────────── */
-const styles = {
-  page: {
-    maxWidth: 390,
-    margin: "0 auto",
-    minHeight: "100vh",
-    display: "flex",
-    flexDirection: "column",
-    background: "#fff",
-  },
+const s = {
+  root: { display: "flex", minHeight: "100vh", background: "#070d1a" },
+  main: { marginLeft: 240, flex: 1, padding: "44px 48px" },
 
-  header: { background: "#29ABE2", padding: "16px 20px" },
-  headerTitle: { color: "white", fontSize: 20, fontWeight: 700, margin: 0 },
-  headerSub: { color: "rgba(255,255,255,0.85)", fontSize: 12, marginTop: 4 },
-
-  periodRow: {
-    display: "flex",
-    gap: 8,
-    padding: "14px 20px",
-    borderBottom: "1px solid #eee",
-  },
+  pageHeader: { display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 36 },
+  pageTitle: { fontSize: 28, fontWeight: 700, color: "#f1f5f9", marginBottom: 6 },
+  pageSub: { fontSize: 14, color: "#334155" },
+  periodRow: { display: "flex", gap: 8 },
   periodBtn: {
-    padding: "6px 16px",
-    borderRadius: 20,
-    border: "1px solid #ddd",
-    background: "none",
-    fontSize: 13,
-    color: "#888",
-    cursor: "pointer",
-    fontFamily: "inherit",
+    padding: "8px 20px", borderRadius: 20,
+    border: "1px solid rgba(255,255,255,0.07)", background: "none",
+    color: "#475569", fontSize: 14, cursor: "pointer", fontWeight: 500,
   },
-  periodActive: {
-    background: "#29ABE2",
-    color: "white",
-    border: "1px solid #29ABE2",
-    fontWeight: 600,
+  periodBtnActive: {
+    background: "rgba(56,189,248,0.1)", border: "1px solid rgba(56,189,248,0.3)",
+    color: "#38bdf8", fontWeight: 700,
   },
 
-  content: { padding: "20px 20px 100px", flex: 1 },
-  loadingText: {
-    textAlign: "center",
-    color: "#888",
-    fontSize: 14,
-    marginTop: 40,
-  },
+  centerMsg: { display: "flex", justifyContent: "center", paddingTop: 100 },
+  loadingSpinner: { width: 36, height: 36, border: "3px solid rgba(255,255,255,0.08)", borderTop: "3px solid #38bdf8", borderRadius: "50%", animation: "spin 0.8s linear infinite" },
+  emptyWrap: { textAlign: "center", paddingTop: 100 },
+  emptyIcon: { fontSize: 52, marginBottom: 16 },
+  emptyTitle: { fontSize: 17, color: "#94a3b8", fontWeight: 600, marginBottom: 8 },
+  emptyDesc: { fontSize: 14, color: "#334155" },
 
-  emptyWrap: { textAlign: "center", paddingTop: 60 },
-  emptyIcon: { fontSize: 48, marginBottom: 12 },
-  emptyText: { fontSize: 15, color: "#555", fontWeight: 600, marginBottom: 6 },
-  emptySubText: { fontSize: 13, color: "#aaa" },
-
-  summaryRow: {
-    display: "grid",
-    gridTemplateColumns: "repeat(3, 1fr)",
-    gap: 8,
-    marginBottom: 24,
-  },
+  summaryRow: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 28 },
   summaryCard: {
-    background: "#f8f8f8",
-    borderRadius: 12,
-    padding: "12px 8px",
-    textAlign: "center",
+    background: "#0f1928", border: "1px solid rgba(255,255,255,0.06)",
+    borderRadius: 16, padding: "24px 28px",
   },
-  summaryLabel: { fontSize: 11, color: "#aaa", marginBottom: 4 },
-  summaryValue: { fontSize: 18, fontWeight: 700 },
+  summaryIcon: { width: 40, height: 40, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, marginBottom: 14 },
+  summaryLabel: { fontSize: 12, color: "#475569", fontWeight: 600, letterSpacing: 0.5, marginBottom: 8 },
+  summaryValue: { fontSize: 32, fontWeight: 800, marginBottom: 4 },
+  summarySub: { fontSize: 12, color: "#334155" },
 
-  section: { marginBottom: 28 },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: 700,
-    color: "#333",
-    marginBottom: 12,
+  chartsGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 20 },
+  chartCard: {
+    background: "#0f1928", border: "1px solid rgba(255,255,255,0.06)",
+    borderRadius: 16, padding: "24px 28px", marginBottom: 0,
   },
+  chartTitle: { fontSize: 14, fontWeight: 700, color: "#94a3b8", marginBottom: 20 },
+  chartHint: { fontSize: 12, color: "#334155", fontWeight: 400 },
 
-  barChart: { display: "flex", flexDirection: "column", gap: 8 },
-  barRow: { display: "flex", alignItems: "center", gap: 8 },
-  barLabel: { fontSize: 11, color: "#aaa", minWidth: 38 },
-  barBg: {
-    flex: 1,
-    height: 10,
-    background: "#f0f0f0",
-    borderRadius: 5,
-    overflow: "hidden",
-  },
-  barFill: { height: "100%", borderRadius: 5, transition: "width 0.5s ease" },
-  barVal: { fontSize: 12, color: "#666", minWidth: 28, textAlign: "right" },
-
-  correlationHint: {
-    fontSize: 12,
-    color: "#aaa",
-    textAlign: "center",
-    marginTop: 6,
-  },
+  barChart: { display: "flex", flexDirection: "column", gap: 10 },
+  barRow: { display: "flex", alignItems: "center", gap: 10 },
+  barLabel: { fontSize: 11, color: "#334155", minWidth: 42, textAlign: "right" },
+  barBg: { flex: 1, height: 8, background: "rgba(255,255,255,0.05)", borderRadius: 4, overflow: "hidden" },
+  barFill: { height: "100%", borderRadius: 4, transition: "width 0.6s ease" },
+  barVal: { fontSize: 12, color: "#475569", minWidth: 32, textAlign: "right" },
 };

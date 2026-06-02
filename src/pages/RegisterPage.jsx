@@ -2,30 +2,24 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const ZODIACS = [
-  { name: "양자리", emoji: "♈", value: "aries" },
-  { name: "황소자리", emoji: "♉", value: "taurus" },
+  { name: "양자리",     emoji: "♈", value: "aries" },
+  { name: "황소자리",   emoji: "♉", value: "taurus" },
   { name: "쌍둥이자리", emoji: "♊", value: "gemini" },
-  { name: "게자리", emoji: "♋", value: "cancer" },
-  { name: "사자자리", emoji: "♌", value: "leo" },
-  { name: "처녀자리", emoji: "♍", value: "virgo" },
-  { name: "천칭자리", emoji: "♎", value: "libra" },
-  { name: "전갈자리", emoji: "♏", value: "scorpio" },
-  { name: "사수자리", emoji: "♐", value: "sagittarius" },
-  { name: "염소자리", emoji: "♑", value: "capricorn" },
-  { name: "물병자리", emoji: "♒", value: "aquarius" },
+  { name: "게자리",     emoji: "♋", value: "cancer" },
+  { name: "사자자리",   emoji: "♌", value: "leo" },
+  { name: "처녀자리",   emoji: "♍", value: "virgo" },
+  { name: "천칭자리",   emoji: "♎", value: "libra" },
+  { name: "전갈자리",   emoji: "♏", value: "scorpio" },
+  { name: "사수자리",   emoji: "♐", value: "sagittarius" },
+  { name: "염소자리",   emoji: "♑", value: "capricorn" },
+  { name: "물병자리",   emoji: "♒", value: "aquarius" },
   { name: "물고기자리", emoji: "♓", value: "pisces" },
 ];
 
 export default function RegisterPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
-  const [form, setForm] = useState({
-    nickname: "",
-    email: "",
-    password: "",
-    passwordConfirm: "",
-    zodiac_sign: "",
-  });
+  const [form, setForm] = useState({ nickname: "", email: "", password: "", passwordConfirm: "", zodiac_sign: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -62,12 +56,7 @@ export default function RegisterPage() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nickname: form.nickname,
-          email: form.email,
-          password: form.password,
-          zodiac_sign: form.zodiac_sign,
-        }),
+        body: JSON.stringify({ nickname: form.nickname, email: form.email, password: form.password, zodiac_sign: form.zodiac_sign }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "회원가입 실패");
@@ -82,207 +71,179 @@ export default function RegisterPage() {
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.logo}>
-        <h1 style={styles.logoText}>ASTROLOG</h1>
-        <p style={styles.logoSub}>
-          {step === 1
-            ? "기본 정보를 입력해주세요"
-            : "나의 별자리를 선택해주세요"}
-        </p>
-      </div>
-
-      {/* 스텝 인디케이터 */}
-      <div style={styles.stepRow}>
-        <div style={{ ...styles.stepDot, background: "#29ABE2" }} />
-        <div style={styles.stepLine} />
-        <div
-          style={{
-            ...styles.stepDot,
-            background: step === 2 ? "#29ABE2" : "#ddd",
-          }}
-        />
-      </div>
-
-      {step === 1 && (
-        <form onSubmit={handleStep1} style={styles.form}>
-          <input
-            style={styles.input}
-            type="text"
-            name="nickname"
-            placeholder="닉네임"
-            value={form.nickname}
-            onChange={handleChange}
-          />
-          <input
-            style={styles.input}
-            type="email"
-            name="email"
-            placeholder="이메일"
-            value={form.email}
-            onChange={handleChange}
-          />
-          <input
-            style={styles.input}
-            type="password"
-            name="password"
-            placeholder="비밀번호 (6자 이상)"
-            value={form.password}
-            onChange={handleChange}
-          />
-          <input
-            style={styles.input}
-            type="password"
-            name="passwordConfirm"
-            placeholder="비밀번호 확인"
-            value={form.passwordConfirm}
-            onChange={handleChange}
-          />
-          {error && <p style={styles.error}>{error}</p>}
-          <button style={styles.btn} type="submit">
-            다음
-          </button>
-        </form>
-      )}
-
-      {step === 2 && (
-        <div>
-          <div style={styles.zodiacGrid}>
-            {ZODIACS.map((z) => (
-              <button
-                key={z.value}
-                style={{
-                  ...styles.zodiacBtn,
-                  background:
-                    form.zodiac_sign === z.value ? "#29ABE2" : "#f5f5f5",
-                  color: form.zodiac_sign === z.value ? "white" : "#333",
-                  border:
-                    form.zodiac_sign === z.value
-                      ? "1.5px solid #29ABE2"
-                      : "1px solid #eee",
-                }}
-                onClick={() => {
-                  setForm({ ...form, zodiac_sign: z.value });
-                  setError("");
-                }}
-              >
-                <span style={{ fontSize: 18 }}>{z.emoji}</span>
-                <span style={{ fontSize: 12 }}>{z.name}</span>
-              </button>
-            ))}
+    <div style={s.root}>
+      {/* Left panel */}
+      <div style={s.left}>
+        <div style={s.leftContent}>
+          <h1 style={s.bigLogo}>ASTROLOG</h1>
+          <div style={s.stepInfo}>
+            <div style={s.stepRow}>
+              <div style={{ ...s.stepCircle, background: "#38bdf8", color: "#070d1a" }}>1</div>
+              <div style={{ ...s.stepLine, background: step === 2 ? "#38bdf8" : "rgba(255,255,255,0.1)" }} />
+              <div style={{ ...s.stepCircle, background: step === 2 ? "#38bdf8" : "rgba(255,255,255,0.08)", color: step === 2 ? "#070d1a" : "#334155" }}>2</div>
+            </div>
+            <div style={s.stepLabels}>
+              <span style={{ ...s.stepLabel, color: "#38bdf8" }}>기본 정보</span>
+              <span style={{ ...s.stepLabel, color: step === 2 ? "#38bdf8" : "#334155" }}>별자리 선택</span>
+            </div>
           </div>
-          {error && <p style={styles.error}>{error}</p>}
-          <button
-            style={styles.btn}
-            onClick={handleRegister}
-            disabled={loading}
-          >
-            {loading ? "가입 중..." : "시작하기 🚀"}
-          </button>
-          <button style={styles.backBtn} onClick={() => setStep(1)}>
-            ← 이전
-          </button>
+          <p style={s.desc}>
+            {step === 1
+              ? "닉네임, 이메일, 비밀번호를\n입력해주세요."
+              : "나의 별자리를 선택해서\n운세를 받아보세요."}
+          </p>
         </div>
-      )}
+      </div>
 
-      <p style={styles.loginLink}>
-        이미 계정이 있으신가요?{" "}
-        <span style={styles.link} onClick={() => navigate("/")}>
-          로그인
-        </span>
-      </p>
+      {/* Right panel */}
+      <div style={s.right}>
+        <div style={s.card}>
+          <h2 style={s.cardTitle}>{step === 1 ? "기본 정보 입력" : "별자리 선택"}</h2>
+          <p style={s.cardSub}>
+            {step === 1 ? "사용할 계정 정보를 입력하세요" : "회원가입 후 변경이 불가능해요"}
+          </p>
+
+          {step === 1 && (
+            <form onSubmit={handleStep1} style={s.form}>
+              {[
+                { name: "nickname", label: "닉네임", type: "text", placeholder: "사용할 닉네임" },
+                { name: "email", label: "이메일", type: "email", placeholder: "example@email.com" },
+                { name: "password", label: "비밀번호", type: "password", placeholder: "6자 이상" },
+                { name: "passwordConfirm", label: "비밀번호 확인", type: "password", placeholder: "비밀번호를 다시 입력" },
+              ].map(({ name, label, type, placeholder }) => (
+                <div key={name} style={s.fieldGroup}>
+                  <label style={s.label}>{label}</label>
+                  <input style={s.input} type={type} name={name} placeholder={placeholder} value={form[name]} onChange={handleChange} />
+                </div>
+              ))}
+              {error && <p style={s.error}>{error}</p>}
+              <button style={s.btn} type="submit">다음 →</button>
+            </form>
+          )}
+
+          {step === 2 && (
+            <div>
+              <div style={s.zodiacGrid}>
+                {ZODIACS.map((z) => {
+                  const selected = form.zodiac_sign === z.value;
+                  return (
+                    <button
+                      key={z.value}
+                      style={{ ...s.zodiacBtn, ...(selected ? s.zodiacBtnActive : {}) }}
+                      onClick={() => { setForm({ ...form, zodiac_sign: z.value }); setError(""); }}
+                    >
+                      <span style={s.zodiacEmoji}>{z.emoji}</span>
+                      <span style={s.zodiacName}>{z.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {error && <p style={s.error}>{error}</p>}
+              <button style={{ ...s.btn, opacity: loading ? 0.7 : 1, marginTop: 20 }} onClick={handleRegister} disabled={loading}>
+                {loading ? "가입 중..." : "시작하기 ✦"}
+              </button>
+              <button style={s.backBtn} onClick={() => setStep(1)}>← 이전으로</button>
+            </div>
+          )}
+
+          <p style={s.switchText}>
+            이미 계정이 있으신가요?{" "}
+            <span style={s.link} onClick={() => navigate("/")}>로그인</span>
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
 
-const styles = {
-  container: {
-    maxWidth: 390,
-    margin: "0 auto",
-    padding: "50px 24px",
-    minHeight: "100vh",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-  },
-  logo: { textAlign: "center", marginBottom: 28 },
-  logoText: {
-    fontSize: 32,
-    fontWeight: 700,
-    color: "#29ABE2",
-    letterSpacing: 3,
-    margin: 0,
-  },
-  logoSub: { fontSize: 13, color: "#888", marginTop: 8 },
-  stepRow: {
+const s = {
+  root: { display: "flex", minHeight: "100vh", background: "#070d1a" },
+  left: {
+    flex: "0 0 38%",
+    background: "linear-gradient(160deg, #0c1525 0%, #0a1020 100%)",
+    borderRight: "1px solid rgba(255,255,255,0.05)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 28,
+    padding: 48,
   },
-  stepDot: {
-    width: 12,
-    height: 12,
-    borderRadius: "50%",
-    transition: "background 0.3s",
+  leftContent: { maxWidth: 320 },
+  bigLogo: {
+    fontSize: 32,
+    fontWeight: 800,
+    letterSpacing: 5,
+    background: "linear-gradient(135deg, #38bdf8, #818cf8)",
+    WebkitBackgroundClip: "text",
+    WebkitTextFillColor: "transparent",
+    backgroundClip: "text",
+    marginBottom: 48,
   },
-  stepLine: { width: 60, height: 2, background: "#ddd" },
-  form: { display: "flex", flexDirection: "column", gap: 10 },
+  stepInfo: { marginBottom: 32 },
+  stepRow: { display: "flex", alignItems: "center", gap: 0, marginBottom: 12 },
+  stepCircle: {
+    width: 32, height: 32, borderRadius: "50%",
+    display: "flex", alignItems: "center", justifyContent: "center",
+    fontSize: 14, fontWeight: 700, flexShrink: 0, transition: "all 0.3s",
+  },
+  stepLine: { flex: 1, height: 2, transition: "background 0.3s" },
+  stepLabels: { display: "flex", justifyContent: "space-between" },
+  stepLabel: { fontSize: 12, fontWeight: 600, transition: "color 0.3s" },
+  desc: {
+    fontSize: 16, color: "#475569", lineHeight: 1.8,
+    whiteSpace: "pre-line",
+  },
+  right: { flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 40 },
+  card: { width: "100%", maxWidth: 480 },
+  cardTitle: { fontSize: 26, fontWeight: 700, color: "#f1f5f9", marginBottom: 8 },
+  cardSub: { fontSize: 14, color: "#475569", marginBottom: 32 },
+  form: { display: "flex", flexDirection: "column", gap: 18 },
+  fieldGroup: { display: "flex", flexDirection: "column", gap: 8 },
+  label: { fontSize: 13, fontWeight: 600, color: "#94a3b8" },
   input: {
-    padding: "12px 14px",
-    border: "1px solid #ddd",
+    padding: "12px 16px",
+    background: "#0f1928",
+    border: "1px solid rgba(255,255,255,0.08)",
     borderRadius: 10,
-    fontSize: 14,
-    outline: "none",
-    fontFamily: "inherit",
+    fontSize: 14, color: "#f1f5f9", outline: "none",
   },
-  error: { color: "#e24b4a", fontSize: 13, marginTop: 2 },
+  error: {
+    color: "#f87171", fontSize: 13,
+    padding: "10px 14px",
+    background: "rgba(248,113,113,0.08)",
+    borderRadius: 8,
+    border: "1px solid rgba(248,113,113,0.15)",
+  },
   btn: {
-    width: "100%",
-    padding: 13,
-    background: "#29ABE2",
-    color: "white",
-    border: "none",
-    borderRadius: 12,
-    fontSize: 15,
-    fontWeight: 700,
-    cursor: "pointer",
-    marginTop: 6,
-    fontFamily: "inherit",
+    width: "100%", padding: "13px",
+    background: "linear-gradient(135deg, #0ea5e9, #6366f1)",
+    color: "white", border: "none", borderRadius: 10,
+    fontSize: 15, fontWeight: 700, cursor: "pointer",
   },
   backBtn: {
-    width: "100%",
-    padding: 10,
-    background: "none",
-    color: "#888",
-    border: "none",
-    fontSize: 14,
-    cursor: "pointer",
-    marginTop: 4,
-    fontFamily: "inherit",
+    width: "100%", padding: "10px",
+    background: "none", border: "none",
+    color: "#334155", fontSize: 14, cursor: "pointer", marginTop: 8,
   },
   zodiacGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(3, 1fr)",
+    gridTemplateColumns: "repeat(4, 1fr)",
     gap: 8,
-    marginBottom: 16,
   },
   zodiacBtn: {
-    padding: "10px 4px",
-    borderRadius: 10,
-    cursor: "pointer",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: 4,
-    fontFamily: "inherit",
-    transition: "all 0.15s",
+    padding: "12px 8px",
+    borderRadius: 10, cursor: "pointer",
+    display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+    background: "#0f1928",
+    border: "1px solid rgba(255,255,255,0.07)",
+    transition: "all 0.15s", color: "#64748b",
   },
-  loginLink: {
-    textAlign: "center",
-    fontSize: 13,
-    color: "#888",
-    marginTop: 20,
+  zodiacBtnActive: {
+    background: "rgba(56,189,248,0.1)",
+    border: "1px solid rgba(56,189,248,0.4)",
+    color: "#38bdf8",
   },
-  link: { color: "#29ABE2", fontWeight: 500, cursor: "pointer" },
+  zodiacEmoji: { fontSize: 22 },
+  zodiacName: { fontSize: 11, fontWeight: 500 },
+  switchText: { textAlign: "center", fontSize: 13, color: "#334155", marginTop: 24 },
+  link: { color: "#38bdf8", fontWeight: 600, cursor: "pointer" },
 };

@@ -1,25 +1,28 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import Sidebar from "../components/Sidebar";
 
 const ZODIAC_MAP = {
-  aries: { name: "양자리", emoji: "♈" },
-  taurus: { name: "황소자리", emoji: "♉" },
-  gemini: { name: "쌍둥이자리", emoji: "♊" },
-  cancer: { name: "게자리", emoji: "♋" },
-  leo: { name: "사자자리", emoji: "♌" },
-  virgo: { name: "처녀자리", emoji: "♍" },
-  libra: { name: "천칭자리", emoji: "♎" },
-  scorpio: { name: "전갈자리", emoji: "♏" },
-  sagittarius: { name: "사수자리", emoji: "♐" },
-  capricorn: { name: "염소자리", emoji: "♑" },
-  aquarius: { name: "물병자리", emoji: "♒" },
-  pisces: { name: "물고기자리", emoji: "♓" },
+  aries:       { name: "양자리",     emoji: "♈" },
+  taurus:      { name: "황소자리",   emoji: "♉" },
+  gemini:      { name: "쌍둥이자리", emoji: "♊" },
+  cancer:      { name: "게자리",     emoji: "♋" },
+  leo:         { name: "사자자리",   emoji: "♌" },
+  virgo:       { name: "처녀자리",   emoji: "♍" },
+  libra:       { name: "천칭자리",   emoji: "♎" },
+  scorpio:     { name: "전갈자리",   emoji: "♏" },
+  sagittarius: { name: "사수자리",   emoji: "♐" },
+  capricorn:   { name: "염소자리",   emoji: "♑" },
+  aquarius:    { name: "물병자리",   emoji: "♒" },
+  pisces:      { name: "물고기자리", emoji: "♓" },
 };
 
 function getTodayString() {
   const d = new Date();
-  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
+  return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
 }
+
+const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -29,7 +32,6 @@ export default function HomePage() {
     return user?.zodiac_sign || "libra";
   });
   const [loading, setLoading] = useState(true);
-  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     async function fetchHoroscope() {
@@ -44,12 +46,8 @@ export default function HomePage() {
           navigate("/");
           return;
         }
-        if (!res.ok) {
-          setHoroscopes([]);
-          return;
-        }
-        const data = await res.json();
-        setHoroscopes(data);
+        if (!res.ok) { setHoroscopes([]); return; }
+        setHoroscopes(await res.json());
       } catch (err) {
         console.error(err);
         setHoroscopes([]);
@@ -61,259 +59,246 @@ export default function HomePage() {
   }, [navigate]);
 
   const myData = horoscopes.find((h) => h.zodiac_sign === myZodiac);
-  const visibleList = showAll ? horoscopes : horoscopes.slice(0, 6);
-
-  if (loading) {
-    return (
-      <div style={styles.loadingWrap}>
-        <p style={styles.loadingText}>✨ 오늘의 운세 불러오는 중...</p>
-      </div>
-    );
-  }
+  const top3 = horoscopes.slice(0, 3);
+  const d = new Date();
 
   return (
-    <div style={styles.page}>
-      {/* 헤더 */}
-      <div style={styles.header}>
-        <div>
-          <p style={styles.headerDate}>{getTodayString()}</p>
-          <h1 style={styles.headerTitle}>ASTROLOG</h1>
+    <div style={s.root}>
+      <Sidebar />
+      <main style={s.main}>
+        {/* Page header */}
+        <div style={s.pageHeader}>
+          <div>
+            <p style={s.dateText}>{getTodayString()} ({WEEKDAYS[d.getDay()]})</p>
+            <h1 style={s.pageTitle}>오늘의 운세</h1>
+          </div>
+          <button style={s.diaryBtn} onClick={() => navigate("/diary")}>
+            ✎ 오늘 일기 쓰기
+          </button>
         </div>
-        <button
-          style={styles.bellBtn}
-          onClick={() => alert("알림 설정 준비 중이에요!")}
-        >
-          🔔
-        </button>
-      </div>
 
-      <div style={styles.content}>
-        {horoscopes.length === 0 ? (
-          <div style={styles.emptyWrap}>
-            <p style={styles.emptyIcon}>🌙</p>
-            <p style={styles.emptyText}>오늘의 운세 데이터가 준비 중이에요.</p>
-            <p style={styles.emptySubText}>잠시 후 다시 확인해주세요.</p>
+        {loading ? (
+          <div style={s.loadingWrap}>
+            <div style={s.loadingSpinner} />
+            <p style={s.loadingText}>운세를 불러오는 중...</p>
+          </div>
+        ) : horoscopes.length === 0 ? (
+          <div style={s.emptyWrap}>
+            <p style={s.emptyIcon}>🌙</p>
+            <p style={s.emptyTitle}>오늘의 운세가 아직 준비 중이에요</p>
+            <p style={s.emptyDesc}>잠시 후 다시 확인해주세요.</p>
           </div>
         ) : (
-          <>
-            {/* 내 별자리 카드 */}
-            {myData && (
-              <div style={styles.myCard}>
-                <div style={styles.myCardBadge}>오늘의 내 운세</div>
-                <div style={styles.myCardZodiac}>
-                  {ZODIAC_MAP[myData.zodiac_sign]?.emoji}{" "}
-                  {ZODIAC_MAP[myData.zodiac_sign]?.name}
-                </div>
-                <div style={styles.myCardRank}>{myData.rank}위</div>
-                <p style={styles.myCardDesc}>{myData.description}</p>
-              </div>
-            )}
-
-            {/* 전체 순위 */}
-            <p style={styles.sectionTitle}>전체 순위</p>
-            <div style={styles.rankList}>
-              {visibleList.map((h) => {
-                const z = ZODIAC_MAP[h.zodiac_sign];
-                const isMe = h.zodiac_sign === myZodiac;
-                return (
-                  <div
-                    key={h.zodiac_sign}
-                    style={{
-                      ...styles.rankItem,
-                      background: isMe ? "#e8f7fd" : "#f8f8f8",
-                    }}
-                  >
-                    <span
-                      style={{
-                        ...styles.rankNum,
-                        color: h.rank <= 3 ? "#FF6B35" : "#29ABE2",
-                      }}
-                    >
-                      {h.rank}위
-                    </span>
-                    <span style={styles.rankEmoji}>{z?.emoji}</span>
-                    <span style={styles.rankName}>{z?.name}</span>
-                    {isMe && <span style={styles.meBadge}>나</span>}
+          <div style={s.grid}>
+            {/* Left: my card + top 3 */}
+            <div style={s.leftCol}>
+              {myData && (
+                <div style={s.myCard}>
+                  <div style={s.myCardInner}>
+                    <div style={s.myBadge}>나의 오늘 운세</div>
+                    <div style={s.myZodiac}>
+                      <span style={s.myEmoji}>{ZODIAC_MAP[myData.zodiac_sign]?.emoji}</span>
+                      <span style={s.myZodiacName}>{ZODIAC_MAP[myData.zodiac_sign]?.name}</span>
+                    </div>
+                    <div style={s.myRank}>{myData.rank}<span style={s.myRankUnit}>위</span></div>
+                    <p style={s.myDesc}>{myData.description}</p>
                   </div>
-                );
-              })}
+                  <div style={s.myCardDeco}>
+                    {ZODIAC_MAP[myData.zodiac_sign]?.emoji}
+                  </div>
+                </div>
+              )}
+
+              {/* Top 3 */}
+              <div style={s.sectionLabel}>✦ 오늘의 TOP 3</div>
+              <div style={s.top3Grid}>
+                {top3.map((h) => {
+                  const z = ZODIAC_MAP[h.zodiac_sign];
+                  const rankColors = ["#f59e0b", "#94a3b8", "#fb923c"];
+                  return (
+                    <div key={h.zodiac_sign} style={{ ...s.top3Card, borderColor: h.zodiac_sign === myZodiac ? "rgba(56,189,248,0.4)" : "rgba(255,255,255,0.06)" }}>
+                      <span style={{ ...s.top3Rank, color: rankColors[h.rank - 1] }}>{h.rank}위</span>
+                      <span style={s.top3Emoji}>{z?.emoji}</span>
+                      <span style={s.top3Name}>{z?.name}</span>
+                      {h.zodiac_sign === myZodiac && <span style={s.meBadge}>나</span>}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
-            <button style={styles.showMoreBtn} onClick={() => setShowAll(!showAll)}>
-              {showAll ? "접기 ▲" : "전체 보기 ▼"}
-            </button>
-          </>
+            {/* Right: full ranking */}
+            <div style={s.rightCol}>
+              <div style={s.rankCard}>
+                <p style={s.rankCardTitle}>전체 순위</p>
+                <div style={s.rankList}>
+                  {horoscopes.map((h) => {
+                    const z = ZODIAC_MAP[h.zodiac_sign];
+                    const isMe = h.zodiac_sign === myZodiac;
+                    const isTop3 = h.rank <= 3;
+                    return (
+                      <div
+                        key={h.zodiac_sign}
+                        style={{ ...s.rankRow, background: isMe ? "rgba(56,189,248,0.06)" : "transparent", borderColor: isMe ? "rgba(56,189,248,0.2)" : "transparent" }}
+                      >
+                        <span style={{ ...s.rankNum, color: isTop3 ? "#f59e0b" : "#334155" }}>
+                          {h.rank}
+                        </span>
+                        <span style={s.rankEmoji}>{z?.emoji}</span>
+                        <div style={s.rankInfo}>
+                          <span style={{ ...s.rankName, color: isMe ? "#38bdf8" : "#94a3b8" }}>
+                            {z?.name}
+                            {isMe && <span style={s.meBadgeInline}> 나</span>}
+                          </span>
+                          <span style={s.rankDesc} title={h.description}>
+                            {h.description?.length > 30 ? h.description.slice(0, 30) + "…" : h.description}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
         )}
-      </div>
+      </main>
 
-      {/* 하단 네비게이션 */}
-      <BottomNav current="home" navigate={navigate} />
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   );
 }
 
-export function BottomNav({ current, navigate }) {
-  const tabs = [
-    { key: "home", label: "홈", icon: "🏠", path: "/home" },
-    { key: "diary", label: "일기", icon: "✏️", path: "/diary" },
-    { key: "chart", label: "통계", icon: "📊", path: "/chart" },
-    { key: "insight", label: "인사이트", icon: "✨", path: "/insight" },
-  ];
-  return (
-    <div style={styles.nav}>
-      {tabs.map((t) => (
-        <button
-          key={t.key}
-          style={{
-            ...styles.navBtn,
-            color: current === t.key ? "#29ABE2" : "#aaa",
-          }}
-          onClick={() => navigate(t.path)}
-        >
-          <span style={{ fontSize: 20 }}>{t.icon}</span>
-          <span style={{ fontSize: 11 }}>{t.label}</span>
-        </button>
-      ))}
-    </div>
-  );
-}
+const s = {
+  root: { display: "flex", minHeight: "100vh", background: "#070d1a" },
+  main: { marginLeft: 240, flex: 1, padding: "44px 48px", maxWidth: "calc(100% - 240px)" },
 
-const styles = {
-  page: {
-    maxWidth: 390,
-    margin: "0 auto",
-    minHeight: "100vh",
+  pageHeader: {
     display: "flex",
-    flexDirection: "column",
-    background: "#fff",
-  },
-  loadingWrap: {
-    maxWidth: 390,
-    margin: "0 auto",
-    minHeight: "100vh",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  loadingText: { fontSize: 15, color: "#888" },
-
-  header: {
-    background: "#29ABE2",
-    padding: "16px 20px",
-    display: "flex",
-    alignItems: "center",
+    alignItems: "flex-end",
     justifyContent: "space-between",
+    marginBottom: 36,
   },
-  headerDate: {
-    color: "rgba(255,255,255,0.85)",
-    fontSize: 12,
-    marginBottom: 2,
-  },
-  headerTitle: {
-    color: "white",
-    fontSize: 20,
-    fontWeight: 700,
-    letterSpacing: 2,
-    margin: 0,
-  },
-  bellBtn: {
-    background: "none",
-    border: "none",
-    fontSize: 20,
+  dateText: { fontSize: 13, color: "#334155", marginBottom: 6, letterSpacing: 0.5 },
+  pageTitle: { fontSize: 28, fontWeight: 700, color: "#f1f5f9" },
+  diaryBtn: {
+    padding: "10px 20px",
+    background: "rgba(56,189,248,0.1)",
+    border: "1px solid rgba(56,189,248,0.25)",
+    borderRadius: 10,
+    color: "#38bdf8",
+    fontSize: 14,
+    fontWeight: 600,
     cursor: "pointer",
+    letterSpacing: 0.2,
   },
 
-  content: { padding: "20px 20px 100px", flex: 1 },
+  loadingWrap: { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingTop: 120, gap: 16 },
+  loadingSpinner: { width: 36, height: 36, border: "3px solid rgba(255,255,255,0.08)", borderTop: "3px solid #38bdf8", borderRadius: "50%", animation: "spin 0.8s linear infinite" },
+  loadingText: { color: "#334155", fontSize: 14 },
 
-  emptyWrap: { textAlign: "center", paddingTop: 60 },
-  emptyIcon: { fontSize: 48, marginBottom: 12 },
-  emptyText: { fontSize: 15, color: "#555", fontWeight: 600, marginBottom: 6 },
-  emptySubText: { fontSize: 13, color: "#aaa" },
+  emptyWrap: { textAlign: "center", paddingTop: 120 },
+  emptyIcon: { fontSize: 56, marginBottom: 16 },
+  emptyTitle: { fontSize: 17, color: "#94a3b8", fontWeight: 600, marginBottom: 8 },
+  emptyDesc: { fontSize: 14, color: "#334155" },
+
+  grid: { display: "grid", gridTemplateColumns: "1fr 380px", gap: 28, alignItems: "start" },
+
+  leftCol: { display: "flex", flexDirection: "column", gap: 24 },
 
   myCard: {
-    background: "linear-gradient(135deg, #29ABE2, #1a8cc4)",
-    borderRadius: 16,
-    padding: 20,
-    color: "white",
-    marginBottom: 20,
-  },
-  myCardBadge: {
-    display: "inline-block",
-    background: "rgba(255,255,255,0.25)",
+    background: "linear-gradient(135deg, #0c2340 0%, #1a1040 100%)",
+    border: "1px solid rgba(56,189,248,0.2)",
     borderRadius: 20,
-    padding: "3px 12px",
+    padding: "32px 36px",
+    position: "relative",
+    overflow: "hidden",
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+  },
+  myCardInner: { flex: 1 },
+  myBadge: {
+    display: "inline-block",
+    padding: "4px 14px",
+    background: "rgba(56,189,248,0.15)",
+    border: "1px solid rgba(56,189,248,0.3)",
+    borderRadius: 20,
     fontSize: 12,
+    color: "#38bdf8",
     fontWeight: 600,
-    marginBottom: 10,
+    marginBottom: 16,
+    letterSpacing: 0.3,
   },
-  myCardZodiac: { fontSize: 14, opacity: 0.9, marginBottom: 4 },
-  myCardRank: {
-    fontSize: 36,
-    fontWeight: 700,
-    lineHeight: 1.2,
-    marginBottom: 8,
-  },
-  myCardDesc: { fontSize: 13, lineHeight: 1.7, opacity: 0.9 },
-
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: 700,
-    color: "#222",
-    marginBottom: 12,
-  },
-  rankList: { display: "flex", flexDirection: "column", gap: 8 },
-  rankItem: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    padding: "10px 14px",
-    borderRadius: 10,
-  },
-  rankNum: { fontSize: 14, fontWeight: 700, minWidth: 30 },
-  rankEmoji: { fontSize: 18 },
-  rankName: { fontSize: 14, fontWeight: 500, color: "#222", flex: 1 },
-  meBadge: {
-    fontSize: 11,
-    background: "#29ABE2",
-    color: "white",
-    padding: "2px 8px",
-    borderRadius: 10,
+  myZodiac: { display: "flex", alignItems: "center", gap: 8, marginBottom: 8 },
+  myEmoji: { fontSize: 20 },
+  myZodiacName: { fontSize: 15, color: "#94a3b8", fontWeight: 500 },
+  myRank: { fontSize: 64, fontWeight: 800, color: "#f1f5f9", lineHeight: 1, marginBottom: 16 },
+  myRankUnit: { fontSize: 28, fontWeight: 600, color: "#475569", marginLeft: 4 },
+  myDesc: { fontSize: 15, color: "#94a3b8", lineHeight: 1.7, maxWidth: 400 },
+  myCardDeco: {
+    fontSize: 100,
+    opacity: 0.06,
+    lineHeight: 1,
+    alignSelf: "center",
+    flexShrink: 0,
+    marginLeft: 16,
   },
 
-  showMoreBtn: {
-    width: "100%",
-    marginTop: 12,
-    padding: "10px 0",
-    background: "none",
-    border: "1px solid #ddd",
-    borderRadius: 10,
-    fontSize: 13,
-    color: "#888",
-    cursor: "pointer",
-    fontFamily: "inherit",
-  },
+  sectionLabel: { fontSize: 13, fontWeight: 700, color: "#334155", letterSpacing: 1 },
 
-  nav: {
-    position: "fixed",
-    bottom: 0,
-    left: "50%",
-    transform: "translateX(-50%)",
-    width: "100%",
-    maxWidth: 390,
-    display: "flex",
-    background: "white",
-    borderTop: "1px solid #eee",
-  },
-  navBtn: {
-    flex: 1,
-    padding: "10px 0",
-    background: "none",
-    border: "none",
-    cursor: "pointer",
+  top3Grid: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 },
+  top3Card: {
+    background: "#0f1928",
+    border: "1px solid",
+    borderRadius: 14,
+    padding: "20px 16px",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    gap: 2,
-    fontFamily: "inherit",
+    gap: 6,
+    position: "relative",
   },
+  top3Rank: { fontSize: 12, fontWeight: 800, letterSpacing: 0.5 },
+  top3Emoji: { fontSize: 32, margin: "4px 0" },
+  top3Name: { fontSize: 13, color: "#64748b", fontWeight: 500 },
+  meBadge: {
+    position: "absolute",
+    top: 10, right: 10,
+    fontSize: 10, background: "#38bdf8", color: "#070d1a",
+    padding: "2px 7px", borderRadius: 20, fontWeight: 700,
+  },
+
+  rightCol: {},
+  rankCard: {
+    background: "#0f1928",
+    border: "1px solid rgba(255,255,255,0.06)",
+    borderRadius: 16,
+    padding: "24px",
+    position: "sticky",
+    top: 24,
+  },
+  rankCardTitle: { fontSize: 14, fontWeight: 700, color: "#475569", marginBottom: 16, letterSpacing: 0.5 },
+  rankList: { display: "flex", flexDirection: "column", gap: 2 },
+  rankRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    padding: "10px 12px",
+    borderRadius: 10,
+    border: "1px solid transparent",
+    transition: "all 0.15s",
+  },
+  rankNum: { fontSize: 13, fontWeight: 800, minWidth: 20, textAlign: "right" },
+  rankEmoji: { fontSize: 18, flexShrink: 0 },
+  rankInfo: { flex: 1, display: "flex", flexDirection: "column", gap: 2, minWidth: 0 },
+  rankName: { fontSize: 13, fontWeight: 600 },
+  meBadgeInline: {
+    fontSize: 10, background: "#38bdf8", color: "#070d1a",
+    padding: "1px 6px", borderRadius: 10, fontWeight: 700,
+    marginLeft: 4, verticalAlign: "middle",
+  },
+  rankDesc: { fontSize: 11, color: "#334155", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
 };
